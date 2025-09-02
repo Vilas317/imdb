@@ -9,9 +9,12 @@ const MovieDetails = () => {
   useEffect(() => {
     const fetchMovie = async () => {
       try {
+        const API_KEY = import.meta.env.VITE_TMDB_KEY;
+
         const res = await axios.get(
-          `https://api.themoviedb.org/3/movie/${id}?api_key=e278e3c498ab14e0469bf6d86da17045&append_to_response=credits,videos`
+          `https://api.themoviedb.org/3/trending/movie/day?api_key=${API_KEY}&page=${pageNo}`
         );
+        
         setMovie(res.data);
       } catch (err) {
         console.error("Error fetching movie details:", err);

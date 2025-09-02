@@ -45,9 +45,12 @@ const Movies = () => {
             dispatch(fetchMovieMiddleware(pageNo));
         } else {
             try {
-                const res = await axios.get(
-                    `https://api.themoviedb.org/3/search/movie?api_key=YOUR_TMDB_KEY&query=${query}`
-                );
+                const API_KEY = import.meta.env.VITE_TMDB_KEY;
+
+const res = await axios.get(
+  `https://api.themoviedb.org/3/search/movie?api_key=${API_KEY}&query=${query}`
+);
+
                 dispatch(moviesSlice.actions.setMovies(res.data.results));
             } catch (err) {
                 console.error("Search error:", err);

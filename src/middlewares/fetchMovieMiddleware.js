@@ -6,7 +6,12 @@ export const fetchMovieMiddleware = params => {
     return async function (dispatch) {
         try {
             dispatch(actions.movieLoading(true));
-            const resp = await fetch(`https://api.themoviedb.org/3/trending/movie/day?api_key=e278e3c498ab14e0469bf6d86da17045&page=${params}`)
+            const API_KEY = import.meta.env.VITE_TMDB_KEY;
+
+const res = await axios.get(
+  `https://api.themoviedb.org/3/trending/movie/day?api_key=${API_KEY}&page=${pageNo}`
+);
+
             const data = await resp.json();
             console.log(data, "data in fetchmoviemoddlware")
             dispatch(actions.movieData(data.results));
