@@ -9,51 +9,51 @@ import paginationSlice from '../redux/paginationSlice';
 import moviesSlice from '../redux/moviesSlice';
 import { fetchMovieMiddleware } from '../middlewares/fetchMovieMiddleware';
 
-
-
 const Movies = () => {
-    // const [movies, setMovies] = useState([])
-    // const pageNo = useSelector((state) => state.PaginationSlice.pageNo)
-    // same as above
     const { pageNo } = useSelector((state) => state.PaginationSlice)
-
-    const dispatch = useDispatch()
-
-    // const movies = useSelector(state => state.MoviesSlice.movies)
-    // const loading = useSelector(state => state.MoviesSlice.loading)
-    // const error = useSelector(state => state.MoviesSlice.error)
-    //  SAME AS ABOVE
     const { movies, loading, error } = useSelector(state => state.MoviesSlice)
 
-
+    const dispatch = useDispatch()
     const { addToWatchlist, removeFromWatchlist, watchList, setWatchList } = useContext(WatchListContext)
 
-    // useEffect(() => {
-    //     axios.get(`https://api.themoviedb.org/3/trending/movie/day?api_key=e278e3c498ab14e0469bf6d86da17045&page=${pageNo}`)
-    //         .then(function (response) {
-    //             // handle success
+    const [query, setQuery] = useState("");
 
-    //             setMovies(response.data.results)
-
-    //         })
-    //         .catch(function (error) {
-    //             // handle error
-    //             console.log(error);
-    //         })
-
-    // }, [pageNo])
-
+    // 🔹 Fetch trending movies
     useEffect(() => {
-        dispatch((fetchMovieMiddleware(pageNo)));
-    }, [pageNo])
+        if (!query) {
+            dispatch(fetchMovieMiddleware(pageNo));
+        }
+    }, [pageNo, query, dispatch]);
 
-
+    // 🔹 Load watchlist from localStorage
     useEffect(() => {
         const moviesFromLS = localStorage.getItem('movies');
         if (moviesFromLS) {
-            setWatchList(JSON.parse(localStorage.getItem('movies')))
+            setWatchList(JSON.parse(moviesFromLS))
         }
-    }, [])
+    }, [setWatchList]);
+
+    // 🔹 Save watchlist to localStorage whenever it changes
+    useEffect(() => {
+        localStorage.setItem('movies', JSON.stringify(watchList));
+    }, [watchList]);
+
+    // 🔹 Search movies
+    const handleSearch = async (e) => {
+        e.preventDefault();
+        if (query.trim() === "") {
+            dispatch(fetchMovieMiddleware(pageNo));
+        } else {
+            try {
+                const res = await axios.get(
+                    `https://api.themoviedb.org/3/search/movie?api_key=YOUR_TMDB_KEY&query=${query}`
+                );
+                dispatch(moviesSlice.actions.setMovies(res.data.results));
+            } catch (err) {
+                console.error("Search error:", err);
+            }
+        }
+    };
 
     function handlePrevious() {
         if (pageNo > 1) {
@@ -66,25 +66,49 @@ const Movies = () => {
     }
 
     if (loading) {
-        return <h4>Trending movies loading...</h4>
+        return <h4 className="text-center mt-4">Trending movies loading...</h4>
     }
     if (error) {
-        return <h4>TRy again later...</h4>
+        return <h4 className="text-center mt-4">Try again later...</h4>
     }
 
     return (
         <div>
+            {/* 🔹 Search Bar */}
+            <form onSubmit={handleSearch} className="flex justify-center my-4">
+                <input
+                    type="text"
+                    placeholder="Search movies..."
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    className="px-4 py-2 w-72 border rounded-md"
+                />
+                <button type="submit" className="ml-2 px-4 py-2 bg-blue-500 text-white rounded-md">
+                    Search
+                </button>
+            </form>
+
             <div className='text-2xl font-bold text-center m-4'>
-                <h2>Trending Movies</h2>
+                <h2>{query ? "Search Results" : "Trending Movies"}</h2>
             </div>
+
             <div className='flex justify-around gap-8 flex-wrap'>
-                {movies.map((movieObj, i) => {
-                    return <MovieCard movieObj={movieObj} addToWatchlist={addToWatchlist} watchList={watchList} removeFromWatchlist={removeFromWatchlist} />
-                })}
+                {movies.map((movieObj, i) => (
+                    <MovieCard
+                        key={i}
+                        movieObj={movieObj}
+                        addToWatchlist={addToWatchlist}
+                        watchList={watchList}
+                        removeFromWatchlist={removeFromWatchlist}
+                    />
+                ))}
             </div>
-            <Pagination handleNext={handleNext} handlePrevious={handlePrevious} pageNo={pageNo} />
+
+            {!query && (
+                <Pagination handleNext={handleNext} handlePrevious={handlePrevious} pageNo={pageNo} />
+            )}
         </div>
     )
 }
 
-export default Movies
+export default Movies;

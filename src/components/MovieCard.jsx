@@ -1,39 +1,34 @@
-import React from 'react'
+import React from "react";
+import { FaHeart } from "react-icons/fa";
 
-const MovieCard = (props) => {
-    const { movieObj, addToWatchlist, watchList, removeFromWatchlist } = props;
-    // const { movieObj } = props;
-    console.log(watchList, 'watchlist array');
+const MovieCard = ({ movieObj, addToWatchlist, removeFromWatchlist, watchList }) => {
+  const isInWatchlist = watchList.some((m) => m.id === movieObj.id);
 
-    function doesContainWatchlist(movieObject) {
-        //  also can use .filter method.
-        for (let i = 0; i < watchList.length; i++) {
-            if (movieObject.id === watchList[i].id) {
-                return true
-            }
+  return (
+    <div className="relative bg-gray-900 text-white rounded-lg shadow-md overflow-hidden w-48">
+      <img
+        src={`https://image.tmdb.org/t/p/w500${movieObj.poster_path}`}
+        alt={movieObj.title}
+        className="w-full h-64 object-cover"
+      />
+
+      {/* ❤️ Heart Icon */}
+      <button
+        onClick={() =>
+          isInWatchlist
+            ? removeFromWatchlist(movieObj)
+            : addToWatchlist(movieObj)
         }
-        return false;
-    }
-    return (
+        className="absolute top-2 right-2 text-xl"
+      >
+        <FaHeart className={isInWatchlist ? "fill-red-600" : "fill-gray-400"} />
+      </button>
 
-        <div
-            style={{ backgroundImage: `url(https://image.tmdb.org/t/p/original${movieObj.poster_path})` }}
-            className='h-[40vh] w-[200px] bg-cover bg-center flex items-start rounded-xl hover:scale-110 duration-200 hover:cursor-pointer'
-        >
-            <div className='text-white text-center w-full p-2 bg-gray-900/50 rounded-xl'>{movieObj.title}</div>
+      <div className="p-2">
+        <h3 className="text-sm font-semibold truncate">{movieObj.title}</h3>
+      </div>
+    </div>
+  );
+};
 
-            {doesContainWatchlist(movieObj) ? <div
-                className='m-3 flex justify-center h-4 w-4 items-center bg-gray-900/50 rounded-xl'
-                onClick={() => removeFromWatchlist(movieObj)}
-            >❌ </div>
-                :
-                <div
-                    className='m-3 flex justify-center h-4 w-4 items-center bg-gray-900/50 rounded-xl'
-                    onClick={() => addToWatchlist(movieObj)}
-                >😍</div>
-            }
-        </div>
-    )
-}
-
-export default MovieCard
+export default MovieCard;
