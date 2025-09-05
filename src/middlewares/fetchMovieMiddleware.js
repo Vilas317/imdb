@@ -1,24 +1,31 @@
-import MoviesSlice from "../redux/moviesSlice";
+import axios from "axios";
+import moviesSlice from "../redux/moviesSlice";
 
-const actions = MoviesSlice.actions;
+export const fetchMovieMiddleware = (pageNo) => async (dispatch) => {
+  dispatch(moviesSlice.actions.setLoading());
 
-export const fetchMovieMiddleware = params => {
-    return async function (dispatch) {
-        try {
-            dispatch(actions.movieLoading(true));
-            const API_KEY = import.meta.env.VITE_TMDB_KEY;
+  try {
+    const apiKey = import.meta.env.VITE_TMDB_KEY;
 
-const res = await axios.get(
-  `https://api.themoviedb.org/3/trending/movie/day?api_key=${API_KEY}&page=${pageNo}`
-);
-
-            const data = await resp.json();
-            console.log(data, "data in fetchmoviemoddlware")
-            dispatch(actions.movieData(data.results));
-
-        } catch (error) {
-            dispatch(actions.movieError());
-            dispatch(actions.movieLoading(false));
-        }
+    if (!apiKey) {
+      throw new Error("❌ TMDB API Key not found. Check your .env file.");
     }
-}
+
+    const url = `https://api.themoviedb.org/3/trending/movie/day?api_key=${apiKey}&page=${pageNo}`;
+
+    console.log("📡 Fetching:", url);
+
+    const res = await axios.get(url);
+
+    if (!res.data || !res.data.results) {
+      throw new Error("❌ Invalid API response");
+    }
+
+    console.log("✅ API Response:", res.data.results);
+
+    dispatch(moviesSlice.actions.setMovies(res.data.results));
+  } catch (err) {
+    console.error("❌ API Error:", err.message);
+    dispatch(moviesSlice.actions.setError(err.message));
+  }
+};

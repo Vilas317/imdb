@@ -2,7 +2,7 @@ import './App.css';
 import Home from './components/Home';
 import WatchList from './components/WatchList';
 import Navbar from './components/Navbar';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import WatchListContextWrapper from './context/WatchListContext';
 import Movies from "./pages/Movies";
 import MovieDetails from "./pages/MovieDetails";

@@ -39,24 +39,33 @@ const Movies = () => {
     }, [watchList]);
 
     // 🔹 Search movies
-    const handleSearch = async (e) => {
-        e.preventDefault();
-        if (query.trim() === "") {
-            dispatch(fetchMovieMiddleware(pageNo));
-        } else {
-            try {
-                const API_KEY = import.meta.env.VITE_TMDB_KEY;
-
-const res = await axios.get(
-  `https://api.themoviedb.org/3/search/movie?api_key=${API_KEY}&query=${query}`
-);
-
-                dispatch(moviesSlice.actions.setMovies(res.data.results));
-            } catch (err) {
-                console.error("Search error:", err);
-            }
-        }
-    };
+// 🔹 Search movies function
+const handleSearch = async (e) => {
+    e.preventDefault();
+    if (query.trim() === "") {
+      dispatch(fetchMovieMiddleware(pageNo)); // empty => trending
+    } else {
+      try {
+        const apiKey = import.meta.env.VITE_TMDB_KEY;
+        const url = `https://api.themoviedb.org/3/search/movie?api_key=${apiKey}&query=${query}`;
+  
+        // 🔹 Debug logs
+        console.log("🔍 Searching movies...");
+        console.log("API Key:", apiKey ? "✅ Loaded" : "❌ MISSING");
+        console.log("URL:", url);
+  
+        const res = await axios.get(url);
+  
+        // 🔹 Debug API response
+        console.log("✅ Search Response:", res.data);
+  
+        dispatch(moviesSlice.actions.setMovies(res.data.results));
+      } catch (err) {
+        console.error("❌ Search Error:", err);
+      }
+    }
+  };
+  
 
     function handlePrevious() {
         if (pageNo > 1) {

@@ -3,43 +3,46 @@ import { useParams } from "react-router-dom";
 import axios from "axios";
 
 const MovieDetails = () => {
-  const { id } = useParams(); // movie id from URL
+  const { id } = useParams();
   const [movie, setMovie] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchMovie = async () => {
       try {
-        const API_KEY = import.meta.env.VITE_TMDB_KEY;
-
         const res = await axios.get(
-          `https://api.themoviedb.org/3/trending/movie/day?api_key=${API_KEY}&page=${pageNo}`
+          `https://api.themoviedb.org/3/movie/${id}?language=en-US`,
+          {
+            headers: {
+              Authorization: `Bearer ${import.meta.env.VITE_TMDB_API_KEY}`, // 👈 Bearer token
+            },
+          }
         );
-        
         setMovie(res.data);
       } catch (err) {
         console.error("Error fetching movie details:", err);
+        setError("Failed to load movie details.");
       }
     };
+
     fetchMovie();
   }, [id]);
 
-  if (!movie) return <h2 className="text-center mt-4">Loading movie details...</h2>;
+  if (error) return <p className="text-center mt-6 text-red-500">{error}</p>;
+  if (!movie) return <p className="text-center mt-6">Loading movie details...</p>;
 
   return (
-    <div className="p-6">
+    <div className="p-6 max-w-3xl mx-auto">
       <h1 className="text-3xl font-bold mb-4">{movie.title}</h1>
-      <div className="flex gap-6">
-        <img
-          src={`https://image.tmdb.org/t/p/w300${movie.poster_path}`}
-          alt={movie.title}
-          className="rounded-md"
-        />
-        <div>
-          <p><strong>Release Date:</strong> {movie.release_date}</p>
-          <p><strong>Rating:</strong> {movie.vote_average} / 10</p>
-          <p className="mt-2">{movie.overview}</p>
-        </div>
-      </div>
+      <img
+        src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+        alt={movie.title}
+        className="rounded-lg shadow-lg mb-4"
+      />
+      <p className="text-gray-700">{movie.overview}</p>
+      <p className="mt-2"><b>Release Date:</b> {movie.release_date}</p>
+      <p><b>Rating:</b> ⭐ {movie.vote_average}</p>
+      <p><b>Runtime:</b> {movie.runtime} minutes</p>
     </div>
   );
 };

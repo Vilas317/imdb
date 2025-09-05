@@ -1,65 +1,121 @@
-import React, { useEffect, useState } from "react";
-import { FaHeart } from "react-icons/fa";
+import React, { useState, useEffect, useContext } from 'react';
+import Pagination from '../components/Pagination';
+import MovieCard from '../components/MovieCard';
+import axios from 'axios';
+
+import { WatchListContext } from '../context/WatchListContext';
+import { useSelector, useDispatch } from "react-redux";
+import paginationSlice from '../redux/paginationSlice';
+import moviesSlice from '../redux/moviesSlice';
+import { fetchMovieMiddleware } from '../middlewares/fetchMovieMiddleware';
 
 const Movies = () => {
-  const [movies, setMovies] = useState([]);
-  const [watchlist, setWatchlist] = useState(
-    JSON.parse(localStorage.getItem("watchlist")) || []
-  );
+  const { pageNo } = useSelector((state) => state.PaginationSlice);
+  const { movies, loading, error } = useSelector((state) => state.MoviesSlice);
 
-  // Fetch trending movies
+  const dispatch = useDispatch();
+  const { addToWatchlist, removeFromWatchlist, watchList, setWatchList } = useContext(WatchListContext);
+
+  const [query, setQuery] = useState("");
+
+  // 🔹 Fetch trending movies
   useEffect(() => {
-    fetch(
-      `https://api.themoviedb.org/3/trending/movie/day?api_key=YOUR_TMDB_KEY`
-    )
-      .then((res) => res.json())
-      .then((data) => setMovies(data.results || []));
-  }, []);
-
-  // Add/Remove from watchlist
-  const toggleWatchlist = (movie) => {
-    let updatedList;
-    if (watchlist.some((m) => m.id === movie.id)) {
-      updatedList = watchlist.filter((m) => m.id !== movie.id);
-    } else {
-      updatedList = [...watchlist, movie];
+    if (!query) {
+      dispatch(fetchMovieMiddleware(pageNo));
     }
-    setWatchlist(updatedList);
-    localStorage.setItem("watchlist", JSON.stringify(updatedList));
+  }, [pageNo, query, dispatch]);
+
+  // 🔹 Load watchlist from localStorage
+  useEffect(() => {
+    const moviesFromLS = localStorage.getItem('movies');
+    if (moviesFromLS) {
+      setWatchList(JSON.parse(moviesFromLS));
+    }
+  }, [setWatchList]);
+
+  // 🔹 Search movies
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    const apiKey = import.meta.env.VITE_TMDB_KEY;
+
+    if (!apiKey) {
+      alert("TMDB API Key missing in .env file");
+      return;
+    }
+
+    if (query.trim() === "") {
+      dispatch(fetchMovieMiddleware(pageNo));
+    } else {
+      try {
+        const url = `https://api.themoviedb.org/3/search/movie?api_key=${apiKey}&query=${query}`;
+        console.log("🔍 Searching:", url);
+
+        const res = await axios.get(url);
+
+        dispatch(moviesSlice.actions.setMovies(res.data.results));
+      } catch (err) {
+        console.error("Search error:", err);
+      }
+    }
   };
 
+  const handlePrevious = () => {
+    if (pageNo > 1) {
+      dispatch(paginationSlice.actions.handlePrevious());
+    }
+  };
+
+  const handleNext = () => {
+    dispatch(paginationSlice.actions.handleNext());
+  };
+
+  if (loading) {
+    return <h4 className="text-center mt-4">Trending movies loading...</h4>;
+  }
+
+  if (error) {
+    return <h4 className="text-center mt-4">❌ {error}</h4>;
+  }
+
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold mb-4">All Movies</h2>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6">
-        {movies.map((movie) => (
-          <div
-            key={movie.id}
-            className="relative bg-gray-900 text-white rounded-lg shadow-md overflow-hidden"
-          >
-            <img
-              src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
-              alt={movie.title}
-              className="w-full h-64 object-cover"
-            />
-            <button
-              onClick={() => toggleWatchlist(movie)}
-              className="absolute top-2 right-2 text-red-500 text-2xl"
-            >
-              <FaHeart
-                className={
-                  watchlist.some((m) => m.id === movie.id)
-                    ? "fill-red-600"
-                    : "fill-gray-400"
-                }
-              />
-            </button>
-            <div className="p-2">
-              <h3 className="text-sm font-semibold">{movie.title}</h3>
-            </div>
-          </div>
-        ))}
+    <div>
+      {/* Search Bar */}
+      <form onSubmit={handleSearch} className="flex justify-center my-4">
+        <input
+          type="text"
+          placeholder="Search movies..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className="px-4 py-2 w-72 border rounded-md"
+        />
+        <button type="submit" className="ml-2 px-4 py-2 bg-blue-500 text-white rounded-md">
+          Search
+        </button>
+      </form>
+
+      <div className="text-2xl font-bold text-center m-4">
+        <h2>{query ? "Search Results" : "Trending Movies"}</h2>
       </div>
+
+      <div className="flex justify-around gap-8 flex-wrap">
+        {movies && movies.length > 0 ? (
+          movies.map((movieObj, i) => (
+            <MovieCard
+              key={movieObj.id || i}
+              movieObj={movieObj}
+              addToWatchlist={addToWatchlist}
+              watchList={watchList}
+              removeFromWatchlist={removeFromWatchlist}
+            />
+          ))
+        ) : (
+          <p className="text-center">No movies found.</p>
+        )}
+      </div>
+
+      {!query && (
+        <Pagination handleNext={handleNext} handlePrevious={handlePrevious} pageNo={pageNo} />
+      )}
     </div>
   );
 };
